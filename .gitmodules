@@ -1,0 +1,3 @@
+[submodule "libs/libraries"]
+	path = libs/libraries
+	url = https://github.com/stlab/libraries
