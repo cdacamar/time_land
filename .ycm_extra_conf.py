@@ -53,6 +53,10 @@ flags = [
 '-std=c++1z',
 '-I.',
 '-I./libs/libraries',
+#'-isystem', '/usr/include',
+'-isystem', '/usr/lib/gcc/x86_64-pc-linux-gnu/6.2.1/include',
+#'-isystem', '/usr/local/include',
+#'-isystem', '/usr/include/c++/6.2.1',
 # ...and the same thing goes for the magic -x option which specifies the
 # language that the files to be compiled are written in. This is mostly
 # relevant for c++ headers.
