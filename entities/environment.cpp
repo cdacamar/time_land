@@ -4,6 +4,7 @@
 
 namespace env {
 
+// TODO: find a way to clean this up. This is pretty ugly right now
 environment_t make_environment(int h, int w) {
   // we need to partition the height and width such that we get
   // some number of tiles to cover the entire width and height
@@ -41,7 +42,7 @@ environment_t make_environment(int h, int w) {
     texture_row.reserve(size_w);
     for (int x = 0;x != size_w;++x) {
       // logic for painting tiles
-      img.create(tile_size, tile_size, sf::Color::Transparent);
+      img.create(tile_size, tile_size, sf::Color::Red);
       // paint ugly color
       for (int tx = 0;tx != tile_size;++tx) {
         for (int ty = 0;ty != tile_size;++ty) {
@@ -50,14 +51,14 @@ environment_t make_environment(int h, int w) {
           }
         }
       }
-      tex.loadFromImage(img);
+      image_row.emplace_back(std::move(img));
+      tex.loadFromImage(image_row.back().get());
+      texture_row.emplace_back(std::move(tex));
 
-      spr.setTexture(tex);
+      spr.setTexture(texture_row.back().get());
       spr.setPosition(static_cast<float>(x * tile_size), static_cast<float>(y * tile_size));
 
       sprite_row.emplace_back(std::move(spr));
-      image_row.emplace_back(std::move(img));
-      texture_row.emplace_back(std::move(tex));
     }
 
     sprite_lst.emplace_back(std::move(sprite_row));
@@ -65,21 +66,91 @@ environment_t make_environment(int h, int w) {
     texture_lst.emplace_back(std::move(texture_row));
   }
 
-  using sp_t = shared_entity<
-                 std::vector<
-                   shared_entity<
-                     std::vector<shared_entity<detail::sprite_t>>
-                   >
-                 >
-               >;
-  sp_t s = sprite_lst;
+  // address remainders
+  if (rw.rem) {
+    for (int y = 0;y != size_h;++y) {
+      img.create(rw.rem, tile_size, sf::Color::Red);
+      // paint
+      for (int tx = 0;tx != rw.rem;++tx) {
+        for (int ty = 0;ty != tile_size;++ty) {
+          if (ty + y * tile_size > hmap[tx + tile_size * size_w]) {
+            img.setPixel(tx, ty, sf::Color::Green);
+          }
+        }
+      }
 
-  detail::sprite_list_t sl = sprite_lst;
-  detail::image_list_t il = std::move(image_lst);
-  detail::texture_list_t tl = std::move(texture_lst);
-  detail::environment e{hmap, sprite_lst, image_lst, texture_lst};
+      auto img_l = image_lst[y].get();
+      img_l.emplace_back(std::move(img));
+      image_lst[y] = img_l;
+
+      tex.loadFromImage(image_lst[y].get().back().get());
+      auto tex_l = texture_lst[y].get();
+      tex_l.emplace_back(std::move(tex));
+      texture_lst[y] = tex_l;
+
+      spr.setTexture(texture_lst[y].get().back().get());
+      spr.setPosition(static_cast<float>(tile_size * size_w), static_cast<float>(y * tile_size));
+      auto spr_l = sprite_lst[y].get();
+      spr_l.emplace_back(std::move(spr));
+      sprite_lst[y] = spr_l;
+    }
+  }
+  if (rh.rem) {
+    std::vector<detail::sprite_t>  sprite_row;
+    std::vector<detail::image_t>   image_row;
+    std::vector<detail::texture_t> texture_row;
+
+    sprite_row.reserve(size_w);
+    image_row.reserve(size_w);
+    texture_row.reserve(size_w);
+    for (int x = 0;x != size_w;++x) {
+      img.create(rw.rem, tile_size, sf::Color::Red);
+      // paint
+      for (int tx = 0;tx != tile_size;++tx) {
+        for (int ty = 0;ty != rh.rem;++ty) {
+          if (ty + size_h * tile_size > hmap[tx + tile_size * size_w]) {
+            img.setPixel(tx, ty, sf::Color::Green);
+          }
+        }
+      }
+      image_row.emplace_back(std::move(img));
+      tex.loadFromImage(image_row.back().get());
+      texture_row.emplace_back(std::move(tex));
+
+      spr.setTexture(texture_row.back().get());
+      spr.setPosition(static_cast<float>(x * tile_size), static_cast<float>(size_h * tile_size));
+
+      sprite_row.emplace_back(std::move(spr));
+    }
+
+    if (rw.rem) { // special case, partial tile-x within our last row
+      img.create(rw.rem, rh.rem, sf::Color::Red);
+      // paint
+      for (int tx = 0;tx != rw.rem;++tx) {
+        for (int ty = 0;ty != rh.rem;++ty) {
+          if (ty + size_h * tile_size > hmap[tx + tile_size * size_w]) {
+            img.setPixel(tx, ty, sf::Color::Green);
+          }
+        }
+      }
+      image_row.emplace_back(std::move(img));
+      tex.loadFromImage(image_row.back().get());
+      texture_row.emplace_back(std::move(tex));
+
+      spr.setTexture(texture_row.back().get());
+      spr.setPosition(static_cast<float>(size_w * tile_size), static_cast<float>(size_h * tile_size));
+
+      sprite_row.emplace_back(std::move(spr));
+    }
+    image_lst.emplace_back(std::move(image_row));
+    texture_lst.emplace_back(std::move(texture_row));
+    sprite_lst.emplace_back(std::move(sprite_row));
+  }
+
   return detail::environment{std::move(hmap),
                              std::move(sprite_lst),
                              std::move(image_lst),
                              std::move(texture_lst)};
 }
+
+} // namespace env

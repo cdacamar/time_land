@@ -29,7 +29,19 @@ find_package(SFML 2 COMPONENTS graphics window system)
 
 add_subdirectory(libs)
 
-set(TIMELAND_SRC main.cpp)
+file(GLOB_RECURSE ENTITIES_SRC RELATIVE_PATH
+      entities/*.cpp
+      entities/*.h)
+source_group("entities" FILES ${ENTITIES_SRC})
+
+file(GLOB_RECURSE UTIL_SRC RELATIVE_PATH
+      util/*.cpp
+      util/*.h)
+source_group("util" FILES ${UTIL_SRC})
+
+set(TIMELAND_SRC main.cpp
+                  ${ENTITIES_SRC}
+                  ${UTIL_SRC})
 
 add_executable(time_land ${TIMELAND_SRC})
 
