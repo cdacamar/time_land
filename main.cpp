@@ -29,7 +29,7 @@ int main() {
   window.create(sf::VideoMode{800, 600}, "simple window");
   window.setFramerateLimit(120);
 
-  game_states::game_t main_game{{800, 600}};
+  game_states::game_t main_game{800, 600};
 
   double        average_render_time = 0.0;
   std::uint64_t render_count        = 0;
@@ -40,6 +40,10 @@ int main() {
       if (e.type == sf::Event::Closed ||
          (e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::Escape)) {
         window.close();
+      }
+      else {
+        auto poll_task = game_states::process_event(main_game, e, window);
+        while (!poll_task.get_try());
       }
     }
     window.clear(sf::Color::White);

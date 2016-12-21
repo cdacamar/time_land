@@ -43,14 +43,19 @@ struct environment {
   sprite_list_t      sprite_tiles;
   image_list_t       image_tiles;
   texture_list_t     tex_tiles;
+  const int          width;
+  const int          height;
   std::map<int, std::list<falling_column>> collapsing_map;
 
-  environment(shared_list_t<int> pixel_hmap, sprite_list_t sprite_tiles,
-              image_list_t  image_tiles, texture_list_t tex_tiles):
+  environment(int width, int height, shared_list_t<int> pixel_hmap,
+              sprite_list_t sprite_tiles, image_list_t  image_tiles,
+              texture_list_t tex_tiles):
     pixel_hmap{std::move(pixel_hmap)},
     sprite_tiles{std::move(sprite_tiles)},
     image_tiles{std::move(image_tiles)},
-    tex_tiles{std::move(tex_tiles)} { }
+    tex_tiles{std::move(tex_tiles)},
+    width{width},
+    height{height} { }
 };
 
 } // namespace detail

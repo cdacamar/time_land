@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <vector>
 
 #include <SFML/Graphics.hpp>
 
@@ -14,19 +15,23 @@ namespace game_states {
 namespace detail {
 
 struct game {
-  env::environment_t world;
+  std::vector<env::environment_t> worlds;
 
-  game(int width, int height): world{env::make_environment(width, height)} { }
-
-  void update(std::chrono::milliseconds dt);
-  void process_event(const sf::Event& e);
+  game(int width, int height);
 };
+
+const env::environment_t& current(const game& g);
+      env::environment_t& current(game& g);
+void                      commit(game& g);
+void                      undo(game& g);
 
 } // namespace detail
 
-using game_t = util::shared_entity<detail::game>;
+using game_t = detail::game;
 
 // game ops
-stlab::future<void> draw(game_t game, sf::RenderWindow& window);
+stlab::future<void> draw(const game_t& game, sf::RenderWindow& window);
+stlab::future<void> process_event(game_t& game, const sf::Event& e, sf::RenderWindow& window);
+
 
 } // namespace game_states
