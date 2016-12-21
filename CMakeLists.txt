@@ -34,6 +34,11 @@ file(GLOB_RECURSE ENTITIES_SRC RELATIVE_PATH
       entities/*.h)
 source_group("entities" FILES ${ENTITIES_SRC})
 
+file(GLOB_RECURSE GAME_STATES_SRC RELATIVE_PATH
+      game_states/*.cpp
+      game_states/*.h)
+source_group("game_states" FILES ${GAME_STATES_SRC})
+
 file(GLOB_RECURSE UTIL_SRC RELATIVE_PATH
       util/*.cpp
       util/*.h)
@@ -41,6 +46,7 @@ source_group("util" FILES ${UTIL_SRC})
 
 set(TIMELAND_SRC main.cpp
                   ${ENTITIES_SRC}
+                  ${GAME_STATES_SRC}
                   ${UTIL_SRC})
 
 add_executable(time_land ${TIMELAND_SRC})

@@ -1,11 +1,16 @@
 #include <entities/environment.h>
 
+#include <cmath>
 #include <cstdlib>
+
+#include <algorithm>
+
+#include <util/functions.h>
 
 namespace env {
 
 // TODO: find a way to clean this up. This is pretty ugly right now
-environment_t make_environment(int h, int w) {
+environment_t make_environment(int w, int h) {
   // we need to partition the height and width such that we get
   // some number of tiles to cover the entire width and height
   const int tile_size = detail::environment::tile_size;
@@ -151,6 +156,74 @@ environment_t make_environment(int h, int w) {
                              std::move(sprite_lst),
                              std::move(image_lst),
                              std::move(texture_lst)};
+}
+
+environment_t create_impact(environment_t e, const sf::CircleShape& blast) {
+  auto env_bounds   = bounding_rect(e);
+  auto blast_bounds = blast.getLocalBounds();
+
+  // if no intersection, return our e
+  if (!blast_bounds.intersects(env_bounds)) {
+    return e;
+  }
+
+  sf::IntRect rect {blast_bounds};
+  auto radius   = static_cast<int>(blast.getRadius());
+  auto diameter = radius * radius;
+  //auto origin   = sf::Vector2i{blast.getOrigin()};
+  const int tile_size = detail::environment::tile_size;
+  auto tile_y     = rect.top / tile_size;
+  auto tile_end_y = (rect.top + rect.height + tile_size) / tile_size;
+  tile_end_y = std::min(tile_end_y, static_cast<int>(e.get().image_tiles.get().size()));
+
+  // precompute the lines
+  struct line_t {
+    int x;
+    int y;
+    int width;
+
+    line_t(int x, int y, int width): x{x}, y{y}, width{width} { }
+  };
+  std::vector<line_t> lines;
+  for (int l = 0;l < radius;++l) {
+    auto x = static_cast<int>(std::ceil(util::cached_sqrt(diameter - l * l)));
+    lines.emplace_back(rect.left - x,
+                       rect.top + l,
+                       rect.left + x);
+  }
+  for (;tile_y < tile_end_y;++tile_y) {
+    auto tile_x     = rect.left / tile_size;
+    auto tile_end_x = (rect.left + rect.width + tile_size) / tile_size;
+
+    auto img_lst = e.get().image_tiles.get()[tile_y].get();
+    auto spr_lst = e.get().sprite_tiles.get()[tile_y].get();
+
+    for (;tile_x < tile_end_x;++tile_x) {
+      auto img = img_lst[tile_x].get();
+      auto spr = spr_lst[tile_x].get();
+
+      auto img_size = sf::Vector2i{img.getSize()};
+      for (int tx = 0;tx < img_size.x;++tx) {
+        for (int ty = 0;ty < img_size.y;++ty) {
+        }
+      }
+    }
+  }
+
+  return e;
+}
+
+sf::FloatRect bounding_rect(const environment_t& e) {
+  auto top = std::min_element(std::begin(e.get().pixel_hmap.get()), std::end(e.get().pixel_hmap.get()));
+  if (top == std::end(e.get().pixel_hmap.get())) {
+    return {0.f, 0.f, 0.f, 0.f};
+  }
+
+  return {
+    0.f, // left
+    0.f, // top
+    static_cast<float>(e.get().pixel_hmap.get().size()), // width
+    static_cast<float>(*top)}; // height (max)
 }
 
 } // namespace env

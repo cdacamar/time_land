@@ -1,28 +1,38 @@
-#include <random>
+#include <chrono>
+#include <iostream>
 
 #include <SFML/Graphics.hpp>
 
 #include <stlab/future.hpp>
 
 #include <entities/environment.h>
+#include <game_states/game.h>
+
+class stopwatch {
+  using clock_t = std::chrono::high_resolution_clock;
+
+  clock_t::time_point start_;
+  clock_t::time_point stop_;
+
+public:
+  stopwatch(): start_{clock_t::now()}, stop_{start_} { }
+
+  void start() { start_ = clock_t::now(); }
+  void stop()  { stop_  = clock_t::now(); }
+
+  clock_t::duration ticks() { return stop_ - start_; }
+};
 
 int main() {
+  stopwatch sw;
   sf::RenderWindow window;
   window.create(sf::VideoMode{800, 600}, "simple window");
   window.setFramerateLimit(120);
 
-  std::mt19937 gen{std::random_device{}()};
-  std::uniform_int_distribution<> dis{0, 3};
-  sf::Color colors[] = {
-    sf::Color::Blue,
-    sf::Color::Black,
-    sf::Color::Green,
-    sf::Color::White
-  };
-  (void)colors;
+  game_states::game_t main_game{{800, 600}};
 
-  auto world = env::make_environment(600, 800);
-  std::vector<stlab::future<void>> sprite_tasks(world.get().sprite_tiles.get().size()); // we want a future for each row
+  double        average_render_time = 0.0;
+  std::uint64_t render_count        = 0;
 
   while (window.isOpen()) {
     sf::Event e;
@@ -36,18 +46,14 @@ int main() {
 
     // not 100% sure sf::RenderWindow::draw() is thread safe but I'm doing it anyway...
     // YOLO
-    for (std::size_t i = 0, last = world.get().sprite_tiles.get().size();
-        i != last;++i) {
-      sprite_tasks.at(i) = stlab::async(stlab::default_scheduler{},
-          [&window, row = world.get().sprite_tiles.get()[i]] {
-            for (auto& spr : row.get()) {
-              window.draw(spr.get());
-            }
-          });
-    }
-    auto task = stlab::when_all(stlab::default_scheduler{},
-        [&window] { window.display(); },
-        std::make_pair(std::begin(sprite_tasks), std::end(sprite_tasks)));
-    while (!task.get_try());
+    sw.start();
+    auto draw_game_task = game_states::draw(main_game, window);
+    while(!draw_game_task.get_try());
+    window.display();
+    sw.stop();
+
+    average_render_time = (average_render_time * render_count + std::chrono::duration_cast<std::chrono::milliseconds>(sw.ticks()).count()) / (render_count + 1);
+    ++render_count;
+    std::cout<<"current average: "<<average_render_time<<'\r';
   }
 }

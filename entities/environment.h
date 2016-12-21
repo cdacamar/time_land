@@ -25,12 +25,12 @@ struct falling_column {
 // the environment without having to copy the entire
 // object
 
-using sprite_t  = shared_entity<sf::Sprite>;
-using image_t   = shared_entity<sf::Image>;
-using texture_t = shared_entity<sf::Texture>;
+using sprite_t  = util::shared_entity<sf::Sprite>;
+using image_t   = util::shared_entity<sf::Image>;
+using texture_t = util::shared_entity<sf::Texture>;
 
 template <typename T>
-using shared_list_t = shared_entity<std::vector<T>>;
+using shared_list_t = util::shared_entity<std::vector<T>>;
 
 using sprite_list_t  = shared_list_t<shared_list_t<sprite_t>>;
 using image_list_t   = shared_list_t<shared_list_t<image_t>>;
@@ -56,14 +56,16 @@ struct environment {
 } // namespace detail
 
 using falling_column_t = detail::falling_column; // let's not make this shared quite yet
-using environment_t    = shared_entity<detail::environment>;
+using environment_t    = util::shared_entity<detail::environment>;
 
 // falling_column ops
 falling_column_t merge(   const falling_column_t& lhs, const falling_column_t& rhs);
-bool           intersects(const falling_column_t& lhs, const falling_column_t& rhs);
+bool             intersects(const falling_column_t& lhs, const falling_column_t& rhs);
 
 
 // environment ops
-environment_t make_environment(int h, int w);
+environment_t make_environment(int w, int h);
+environment_t create_impact(environment_t e, const sf::CircleShape& blast);
+sf::FloatRect bounding_rect(const environment_t& e);
 
 } // namespace env
